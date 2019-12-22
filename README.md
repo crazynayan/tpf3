@@ -1,4 +1,4 @@
-# TPF Analyzer API - Test Cases
+# TPF Analyzer - API Testing
 
 This project contains the test cases for testing the API provided by 
 [TPF Analyzer Tool](https://github.com/crazynayan/tpf1)

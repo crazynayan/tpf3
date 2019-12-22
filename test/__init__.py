@@ -13,18 +13,7 @@ class TestAPI(TestCase):
             self.TOKEN = self.authenticate()
         self.test_data_dict = {'name': 'ETA5 Testing 123', 'seg_name': 'ETA5'}
         response = self.post(f"/test_data", json=self.test_data_dict)
-        self.test_data_dict['id'] = response.json()['id']
-        response = self.get(f"/test_data/{self.test_data_dict['id']}")
-        self.test_data_dict['outputs'] = [{'cores': list(), 'dumps': list(), 'id': response.json()['outputs'][0]['id'],
-                                           'last_line': str(), 'messages': list(), 'reg_pointers': dict(),
-                                           'regs': dict()}]
-        self.test_data_dict['cores'] = list()
-        self.test_data_dict['errors'] = list()
-        self.test_data_dict['fixed_files'] = list()
-        self.test_data_dict['partition'] = str()
-        self.test_data_dict['pnr'] = list()
-        self.test_data_dict['regs'] = dict()
-        self.test_data_dict['tpfdf'] = list()
+        self.test_data_dict = response.json()
 
     def tearDown(self) -> None:
         self.delete(f"/test_data/{self.test_data_dict['id']}")
