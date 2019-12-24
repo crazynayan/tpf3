@@ -8,7 +8,7 @@ from config import config
 
 def authenticated_request(func):
     @wraps(func)
-    def request_wrapper(cls, url, **kwargs):
+    def request_wrapper(cls, url: str, **kwargs):
         url = f"{config.SERVER_URL}{url}"
         if 'auth' not in kwargs:
             if not cls.TOKEN:
@@ -48,15 +48,15 @@ class TestAPI(TestCase):
 
     @classmethod
     @authenticated_request
-    def get(cls, url, **kwargs):
+    def get(cls, url: str, **kwargs) -> Response:
         return get(url, **kwargs)
 
     @classmethod
     @authenticated_request
-    def post(cls, url, **kwargs):
+    def post(cls, url: str, **kwargs) -> Response:
         return post(url, **kwargs)
 
     @classmethod
     @authenticated_request
-    def delete(cls, url, **kwargs):
+    def delete(cls, url: str, **kwargs) -> Response:
         return delete(url, **kwargs)

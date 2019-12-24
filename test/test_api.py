@@ -56,3 +56,34 @@ class DeleteTestData(TestAPI):
     def test_empty_id(self):
         response = self.delete(f"/test_data/")
         self.assertEqual(404, response.status_code)
+
+
+class GetAllTestData(TestAPI):
+
+    def test_get_all(self):
+        response = self.get(f"/test_data")
+        self.assertEqual(200, response.status_code)
+        self.assertIn({'id': self.TEST_DATA['id'], 'name': self.TEST_DATA['name'],
+                       'seg_name': self.TEST_DATA['seg_name']}, response.json())
+
+    def test_get_by_name(self):
+        response = self.get(f"/test_data", params={'name': 'ETA5 Testing 123'})
+        self.assertEqual(200, response.status_code)
+        self.assertIn({'id': self.TEST_DATA['id'], 'name': self.TEST_DATA['name'],
+                       'seg_name': self.TEST_DATA['seg_name']}, response.json())
+        self.assertEqual(1, len(response.json()))
+
+    def test_name_not_found(self):
+        response = self.get(f"/test_data", params={'name': 'Invalid-Name'})
+        self.assertEqual(404, response.status_code)
+        self.assertDictEqual({'error': 'Not Found', 'message': 'No test data found by this name'}, response.json())
+
+    def test_empty_name(self):
+        response = self.get(f"/test_data", params={'name': ''})
+        self.assertEqual(404, response.status_code)
+
+    def test_other_parameters(self):
+        response = self.get(f"/test_data", params={'invalid_params': 'invalid_data'})
+        self.assertEqual(200, response.status_code)
+        self.assertIn({'id': self.TEST_DATA['id'], 'name': self.TEST_DATA['name'],
+                       'seg_name': self.TEST_DATA['seg_name']}, response.json())
