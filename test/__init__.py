@@ -1,62 +1,74 @@
 from functools import wraps
 from unittest import TestCase
 
-from requests import Response, post, get, delete
+from requests import Response, post, get, delete, patch
 
 from config import config
 
 
 def authenticated_request(func):
     @wraps(func)
-    def request_wrapper(cls, url: str, **kwargs):
+    def request_wrapper(self, url: str, **kwargs):
         url = f"{config.SERVER_URL}{url}"
-        if 'auth' not in kwargs:
-            if not cls.TOKEN:
-                cls.TOKEN = cls.authenticate()
-            kwargs['headers'] = {'Authorization': f"Bearer {cls.TOKEN}"}
-        response = func(cls, url, **kwargs)
+        if not config.TOKEN:
+            config.TOKEN = post(f"{config.SERVER_URL}/tokens", auth=(config.USERNAME, config.PASSWORD)).json()['token']
+        kwargs['headers'] = {'Authorization': f"Bearer {config.TOKEN}"}
+        response = func(self, url, **kwargs)
         if response.status_code == 401:
-            cls.TOKEN = str()
+            config.TOKEN = str()
         return response
 
     return request_wrapper
 
 
 class TestAPI(TestCase):
-    TOKEN = str()
-    TEST_DATA = dict()
+    NAME = 'ETA5 Testing 123'
+    SEG_NAME = 'ETA5'
 
-    @classmethod
-    def setUpClass(cls) -> None:
-        if not cls.TOKEN:
-            cls.TOKEN = cls.authenticate()
-        cls.TEST_DATA = {'name': 'ETA5 Testing 123', 'seg_name': 'ETA5'}
-        response = cls.post(f"/test_data", json=cls.TEST_DATA)
-        cls.TEST_DATA = response.json()
-
-    @classmethod
-    def tearDownClass(cls) -> None:
-        cls.delete(f"/test_data/{cls.TEST_DATA['id']}")
-
-    @classmethod
-    def authenticate(cls) -> str:
-        response: Response = cls.post('/tokens', auth=(config.USERNAME, config.PASSWORD))
+    def get_sample_test_data(self) -> dict:
+        if config.TEST_DATA:
+            return config.TEST_DATA
+        response = self.get(f"/test_data", params={'name': self.NAME})
+        if response.status_code == 200:
+            test_data_id = response.json()[0]['id']
+            response = self.get(f"/test_data/{test_data_id}")
+            if response.status_code != 200:
+                raise TypeError
+            config.TEST_DATA = response.json()
+            return config.TEST_DATA
+        response = self.post(f"/test_data", json={'name': self.NAME, 'seg_name': self.SEG_NAME})
         if response.status_code != 200:
-            return str()
-        token: dict = response.json()
-        return token['token'] if 'token' in token else str()
+            raise TypeError
+        config.TEST_DATA = response.json()
+        return config.TEST_DATA
 
-    @classmethod
+    def get_test_data_to_delete(self) -> dict:
+        response = self.post(f"/test_data", json={'name': f"{self.NAME} for delete", 'seg_name': self.SEG_NAME})
+        if response.status_code != 200:
+            raise TypeError
+        return response.json()
+
+    def get_test_data_to_rename(self) -> dict:
+        response = self.post(f"/test_data", json={'name': f"{self.NAME} for rename", 'seg_name': self.SEG_NAME})
+        if response.status_code != 200:
+            raise TypeError
+        return response.json()
+
+    def delete_test_data(self, test_data_id: str) -> Response:
+        return self.delete(f"/test_data/{test_data_id}")
+
     @authenticated_request
-    def get(cls, url: str, **kwargs) -> Response:
+    def get(self, url: str, **kwargs) -> Response:
         return get(url, **kwargs)
 
-    @classmethod
     @authenticated_request
-    def post(cls, url: str, **kwargs) -> Response:
+    def post(self, url: str, **kwargs) -> Response:
         return post(url, **kwargs)
 
-    @classmethod
     @authenticated_request
-    def delete(cls, url: str, **kwargs) -> Response:
+    def patch(self, url: str, **kwargs) -> Response:
+        return patch(url, **kwargs)
+
+    @authenticated_request
+    def delete(self, url: str, **kwargs) -> Response:
         return delete(url, **kwargs)
