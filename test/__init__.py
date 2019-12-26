@@ -42,14 +42,8 @@ class TestAPI(TestCase):
         config.TEST_DATA = response.json()
         return config.TEST_DATA
 
-    def get_test_data_to_delete(self) -> dict:
-        response = self.post(f"/test_data", json={'name': f"{self.NAME} for delete", 'seg_name': self.SEG_NAME})
-        if response.status_code != 200:
-            raise TypeError
-        return response.json()
-
-    def get_test_data_to_rename(self) -> dict:
-        response = self.post(f"/test_data", json={'name': f"{self.NAME} for rename", 'seg_name': self.SEG_NAME})
+    def get_test_data(self, reason: str) -> dict:
+        response = self.post(f"/test_data", json={'name': f"{self.NAME}{reason}", 'seg_name': self.SEG_NAME})
         if response.status_code != 200:
             raise TypeError
         return response.json()

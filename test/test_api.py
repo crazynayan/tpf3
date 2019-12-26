@@ -43,7 +43,7 @@ class CreateTestData(TestAPI):
 class DeleteTestData(TestAPI):
 
     def test_delete(self):
-        test_data = self.get_test_data_to_delete()
+        test_data = self.get_test_data('- Delete')
         response = self.delete(f"/test_data/{test_data['id']}")
         self.assertEqual(200, response.status_code)
         self.assertDictEqual({'test_data_id': test_data['id']}, response.json())
@@ -62,19 +62,19 @@ class DeleteTestData(TestAPI):
 
 class GetAllTestData(TestAPI):
 
-    def test_get_all(self):
+    def setUp(self):
         test_data = self.get_sample_test_data()
+        self.test_data_header = {'id': test_data['id'], 'name': test_data['name'], 'seg_name': test_data['seg_name']}
+
+    def test_get_all(self):
         response = self.get(f"/test_data")
         self.assertEqual(200, response.status_code)
-        self.assertIn({'id': test_data['id'], 'name': test_data['name'],
-                       'seg_name': test_data['seg_name']}, response.json())
+        self.assertIn(self.test_data_header, response.json())
 
     def test_get_by_name(self):
-        test_data = self.get_sample_test_data()
         response = self.get(f"/test_data", params={'name': 'ETA5 Testing 123'})
         self.assertEqual(200, response.status_code)
-        self.assertIn({'id': test_data['id'], 'name': test_data['name'],
-                       'seg_name': test_data['seg_name']}, response.json())
+        self.assertIn(self.test_data_header, response.json())
         self.assertEqual(1, len(response.json()))
 
     def test_name_not_found(self):
@@ -89,15 +89,13 @@ class GetAllTestData(TestAPI):
     def test_other_parameters(self):
         response = self.get(f"/test_data", params={'invalid_params': 'invalid_data'})
         self.assertEqual(200, response.status_code)
-        test_data = self.get_sample_test_data()
-        self.assertIn({'id': test_data['id'], 'name': test_data['name'],
-                       'seg_name': test_data['seg_name']}, response.json())
+        self.assertIn(self.test_data_header, response.json())
 
 
 class RenameTestData(TestAPI):
 
     def setUp(self) -> None:
-        self.test_data = self.get_test_data_to_rename()
+        self.test_data = self.get_test_data(' - Rename')
 
     def tearDown(self) -> None:
         self.delete_test_data(self.test_data['id'])
@@ -132,6 +130,10 @@ class RenameErrorTestData(TestAPI):
     def setUp(self) -> None:
         self.test_data_id = self.get_sample_test_data()['id']
 
+    def test_invalid_id(self):
+        response = self.patch(f"/test_data/invalid_id/rename")
+        self.assertEqual(404, response.status_code)
+
     def test_empty(self) -> None:
         response = self.patch(f"/test_data/{self.test_data_id}/rename", json=dict())
         self.assertEqual(400, response.status_code)
@@ -163,3 +165,38 @@ class RenameErrorTestData(TestAPI):
         response = self.patch(f"/test_data/{self.test_data_id}/rename", json={'name': 'ETA5 Testing 1234',
                                                                               'seg_name': ''})
         self.assertEqual(400, response.status_code)
+
+
+class CopyTestData(TestAPI):
+
+    def setUp(self) -> None:
+        self.test_data = self.get_sample_test_data()
+        self.copy_test_data_id = str()
+
+    def tearDown(self) -> None:
+        if self.copy_test_data_id:
+            self.delete_test_data(self.copy_test_data_id)
+
+    def test_copy(self):
+        response = self.post(f"/test_data/{self.test_data['id']}/copy")
+        self.assertEqual(200, response.status_code)
+        self.copy_test_data_id = response.json()['id']
+        response = self.get(f"/test_data/{self.copy_test_data_id}")
+        self.assertEqual(200, response.status_code)
+        copy_test_data = response.json()
+        self.assertNotEqual(copy_test_data['name'], self.test_data['name'])
+        self.assertNotEqual(copy_test_data['id'], self.test_data['id'])
+        self.assertEqual(copy_test_data['seg_name'], self.test_data['seg_name'])
+        self.assertDictEqual(copy_test_data['outputs'][0]['regs'], self.test_data['outputs'][0]['regs'])
+        self.assertNotEqual(copy_test_data['outputs'][0]['id'], self.test_data['outputs'][0]['id'])
+        # Cannot copy a copied test data. You need to rename it first
+        response = self.post(f"/test_data/{self.copy_test_data_id}/copy")
+        self.assertEqual(400, response.status_code)
+        self.assertDictEqual({'message': 'Error in copying test data', 'error': 'Bad Request'}, response.json())
+        # Cannot copy a test data multiple times. You need to rename the copied test data first
+        response = self.post(f"/test_data/{self.test_data['id']}/copy")
+        self.assertEqual(400, response.status_code)
+
+    def test_invalid_id(self):
+        response = self.post(f"/test_data/invalid_id/copy")
+        self.assertEqual(404, response.status_code)
