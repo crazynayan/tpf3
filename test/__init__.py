@@ -31,11 +31,10 @@ class TestAPI(TestCase):
         response = self.get(f"/test_data", params={'name': self.NAME})
         if response.status_code == 200:
             test_data_id = response.json()[0]['id']
-            response = self.get(f"/test_data/{test_data_id}")
-            if response.status_code != 200:
-                raise TypeError
-            config.TEST_DATA = response.json()
-            return config.TEST_DATA
+            # response = self.get(f"/test_data/{test_data_id}")
+            # config.TEST_DATA = response.json()
+            # return config.TEST_DATA
+            self.delete(f"/test_data/{test_data_id}")
         response = self.post(f"/test_data", json={'name': self.NAME, 'seg_name': self.SEG_NAME})
         if response.status_code != 200:
             raise TypeError
