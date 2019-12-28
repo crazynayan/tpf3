@@ -110,10 +110,26 @@ class OutputFields(TestAPI):
         field_byte = self._check_field_byte('EB0EB', 'EBW000', 6, input_len=6)
         self._check_core('EB0EB', [field_byte])
 
-    def test_based_field(self) -> None:
+    def test_based_field_delete(self) -> None:
         field_byte1 = self._check_field_byte('UI2PF', 'UI2CNN', 1, input_base_reg='R7')
         field_byte2 = self._check_field_byte('UI2PF', 'UI2INC', 3, input_len=3, input_base_reg=str())
         self._check_core('UI2PF', [field_byte1, field_byte2], base_reg=str())
+        # Delete 1st field
+        response = self.delete(f"/test_data/{self.test_data['id']}/output/cores/UI2PF/fields/UI2CNN")
+        self.assertEqual(200, response.status_code)
+        del self.macro_fields[0]
+        self.assertDictEqual(field_byte1, response.json())
+        self._check_core('UI2PF', [field_byte2])
+        # Deleting the 1st field again will give an error
+        response = self.delete(f"/test_data/{self.test_data['id']}/output/cores/UI2PF/fields/UI2CNN")
+        self.assertEqual(400, response.status_code)
+        # Delete 2nd field
+        response = self.delete(f"/test_data/{self.test_data['id']}/output/cores/UI2PF/fields/UI2INC")
+        self.assertEqual(200, response.status_code)
+        del self.macro_fields[0]
+        response = self.get(f"/test_data/{self.test_data['id']}")
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(list(), response.json()['outputs'][0]['cores'])
 
     def test_invalid_id(self):
         response = self.patch(f"/test_data/invalid_id/output/cores/WA0AA/fields", json={'field': 'WA0BBR'})
@@ -136,3 +152,12 @@ class OutputFields(TestAPI):
     def test_field_not_in_macro(self):
         response = self.patch(f"/test_data/{self.test_data['id']}/output/cores/WA0AA/fields", json={'field': 'EBW000'})
         self.assertEqual(400, response.status_code)
+
+    def test_delete_invalid_id(self):
+        response = self.delete(f"/test_data/invalid_id/output/cores/WA0AA/fields/WA0BBR")
+        self.assertEqual(404, response.status_code)
+
+    def test_delete_macro_name_not_in_core(self):
+        response = self.delete(f"/test_data/{self.test_data['id']}/output/cores/WA0AA/fields/WA0BBR")
+        self.assertEqual(400, response.status_code)
+        self.assertDictEqual({'message': 'Error in deleting field', 'error': 'Bad Request'}, response.json())
