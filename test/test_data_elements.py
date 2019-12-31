@@ -327,3 +327,119 @@ class InputFields(TestAPI):
         response = self.delete(f"/test_data/{self.test_data['id']}/input/cores/WA0AA/fields/WA0BBR")
         self.assertEqual(400, response.status_code)
         self.assertDictEqual({'message': 'Error in deleting field', 'error': 'Bad Request'}, response.json())
+
+
+class InputRegisters(TestAPI):
+
+    def setUp(self) -> None:
+        self.test_data: dict = self.get_sample_test_data()
+        self.reg_list: list = list()
+
+    def tearDown(self) -> None:
+        for reg in self.reg_list:
+            self.delete(f"/test_data/{self.test_data['id']}/input/regs/{reg}")
+        return
+
+    def test_few_reg_delete(self) -> None:
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/regs", json={'reg': 'R14', 'value': 10})
+        self.assertEqual(200, response.status_code)
+        self.assertDictEqual({'test_data_id': self.test_data['id']}, response.json())
+        self.reg_list.append('R14')
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/regs", json={'reg': 'R3', 'value': -5})
+        self.assertEqual(200, response.status_code)
+        self.reg_list.append('R3')
+        response = self.get(f"/test_data/{self.test_data['id']}")
+        self.assertEqual(200, response.status_code)
+        test_data = deepcopy(self.test_data)
+        test_data['regs']['R14'] = 10
+        test_data['regs']['R3'] = -5
+        self.assertDictEqual(test_data, response.json())
+        response = self.delete(f"/test_data/{self.test_data['id']}/input/regs/r14")
+        self.assertEqual(400, response.status_code)
+        response = self.delete(f"/test_data/{self.test_data['id']}/input/regs/R14")
+        self.assertEqual(200, response.status_code)
+        self.reg_list.remove('R14')
+        self.assertDictEqual({'test_data_id': self.test_data['id']}, response.json())
+        response = self.get(f"/test_data/{self.test_data['id']}")
+        self.assertEqual(200, response.status_code)
+        del test_data['regs']['R14']
+        self.assertDictEqual(test_data, response.json())
+        response = self.delete(f"/test_data/{self.test_data['id']}/input/regs/R3")
+        self.assertEqual(200, response.status_code)
+        self.reg_list.remove('R3')
+        response = self.get(f"/test_data/{self.test_data['id']}")
+        self.assertEqual(200, response.status_code)
+        self.assertDictEqual(self.test_data, response.json())
+
+    def test_invalid_id(self) -> None:
+        response = self.patch(f"/test_data/invalid_id/input/regs", json={'reg': 'R14', 'value': 10})
+        self.assertEqual(404, response.status_code)
+
+    def test_key_regs(self) -> None:
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/regs", json={'regs': 'R14', 'value': 10})
+        self.assertEqual(400, response.status_code)
+        self.assertDictEqual({'message': 'Invalid format of input Register', 'error': 'Bad Request'}, response.json())
+
+    def test_no_reg(self) -> None:
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/regs", json={'value': 10})
+        self.assertEqual(400, response.status_code)
+
+    def test_reg_not_string(self) -> None:
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/regs", json={'reg': 10, 'value': 10})
+        self.assertEqual(400, response.status_code)
+
+    def test_invalid_reg(self) -> None:
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/regs", json={'reg': 'r1', 'value': 10})
+        self.assertEqual(400, response.status_code)
+
+    def test_empty_body(self) -> None:
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/regs", json={})
+        self.assertEqual(400, response.status_code)
+
+    def test_key_values(self) -> None:
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/regs", json={'reg': 'R14', 'values': 10})
+        self.assertEqual(400, response.status_code)
+
+    def test_no_value(self) -> None:
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/regs", json={'reg': 'R14'})
+        self.assertEqual(400, response.status_code)
+
+    def test_value_not_int(self) -> None:
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/regs", json={'reg': 'R14', 'value': '10'})
+        self.assertEqual(400, response.status_code)
+
+    def test_value_high(self) -> None:
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/regs", json={'reg': 'R14', 'value': 2147483648})
+        self.assertEqual(400, response.status_code)
+
+    def test_value_high_boundary(self) -> None:
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/regs", json={'reg': 'R14', 'value': 2147483647})
+        self.assertEqual(200, response.status_code)
+        self.reg_list.append('R14')
+
+    def test_value_low(self) -> None:
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/regs", json={'reg': 'R1', 'value': -2147483649})
+        self.assertEqual(400, response.status_code)
+
+    def test_value_low_boundary(self) -> None:
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/regs", json={'reg': 'R1', 'value': -2147483648})
+        self.assertEqual(200, response.status_code)
+        self.reg_list.append('R1')
+
+    def test_3_keys(self) -> None:
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/regs", json={'reg': 'R1', 'value': 1, 'val': 3})
+        self.assertEqual(400, response.status_code)
+
+    def test_multiple_reg(self) -> None:
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/regs",
+                              json=[{'reg': 'R1', 'value': 12}, {'reg': 'R3', 'value': 32}])
+        self.assertEqual(400, response.status_code)
+
+    def test_delete_invalid_id(self) -> None:
+        response = self.delete(f"/test_data/invalid_id/input/regs/R1")
+        self.assertEqual(404, response.status_code)
+
+    def test_delete_reg_not_present(self) -> None:
+        response = self.delete(f"/test_data/{self.test_data['id']}/input/regs/R1")
+        self.assertEqual(400, response.status_code)
+        self.assertDictEqual({'message': 'Invalid Register', 'error': 'Bad Request'}, response.json())
