@@ -81,8 +81,7 @@ class OutputFields(TestAPI):
         response = self.patch(f"/test_data/{self.test_data['id']}/output/cores/{macro_name}/fields", json=body)
         self.assertEqual(200, response.status_code)
         self.macro_fields.append((macro_name, field_name))
-        body['data'] = str()
-        body['id'] = response.json()['id']
+        # body['data'] = str()
         body['length'] = length
         body.pop('base_reg', None)
         self.assertDictEqual(body, response.json())
@@ -95,9 +94,9 @@ class OutputFields(TestAPI):
         expected_test_data = deepcopy(self.test_data)
         core_id = actual_test_data['outputs'][0]['cores'][0]['id']
         base_reg = base_reg if base_reg else str()
-        core = {'id': core_id, 'base_reg': base_reg, 'field_bytes': list(), 'macro_name': macro_name}
+        core = {'id': core_id, 'base_reg': base_reg, 'field_data': list(), 'macro_name': macro_name, 'variation': 0}
         expected_test_data['outputs'][0]['cores'].append(core)
-        expected_test_data['outputs'][0]['cores'][0]['field_bytes'].extend(field_bytes)
+        expected_test_data['outputs'][0]['cores'][0]['field_data'].extend(field_bytes)
         self.assertDictEqual(expected_test_data, actual_test_data)
 
     def test_default_field_no_length(self) -> None:
@@ -221,8 +220,8 @@ class InputFields(TestAPI):
         response = self.patch(f"/test_data/{self.test_data['id']}/input/cores/{macro_name}/fields", json=body)
         self.assertEqual(200, response.status_code)
         self.macro_fields.append((macro_name, field_name))
-        body['id'] = response.json()['id']
-        body['length'] = 0
+        # body['id'] = response.json()['id']
+        # body['length'] = 0
         self.assertDictEqual(body, response.json())
         return body
 
@@ -232,9 +231,9 @@ class InputFields(TestAPI):
         actual_test_data = response.json()
         expected_test_data = deepcopy(self.test_data)
         core_id = actual_test_data['cores'][0]['id']
-        core = {'id': core_id, 'base_reg': str(), 'field_bytes': list(), 'macro_name': macro_name}
+        core = {'id': core_id, 'base_reg': str(), 'field_data': list(), 'macro_name': macro_name, 'variation': 0}
         expected_test_data['cores'].append(core)
-        expected_test_data['cores'][0]['field_bytes'].extend(field_bytes)
+        expected_test_data['cores'][0]['field_data'].extend(field_bytes)
         self.assertDictEqual(expected_test_data, actual_test_data)
 
     def test_default_field(self) -> None:
