@@ -81,7 +81,6 @@ class OutputFields(TestAPI):
         response = self.patch(f"/test_data/{self.test_data['id']}/output/cores/{macro_name}/fields", json=body)
         self.assertEqual(200, response.status_code)
         self.macro_fields.append((macro_name, field_name))
-        # body['data'] = str()
         body['length'] = length
         body.pop('base_reg', None)
         self.assertDictEqual(body, response.json())

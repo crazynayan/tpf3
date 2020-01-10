@@ -1,4 +1,6 @@
+from base64 import b64encode
 from copy import deepcopy
+from typing import Union, Dict
 
 from test import TestAPI
 
@@ -190,4 +192,122 @@ class Pnr(TestAPI):
     def test_field_data_in_body(self):
         response = self.patch(f"/test_data/{self.test_data['id']}/input/pnr",
                               json={'key': 'name', 'field_data': 'WA0BBR'})
+        self.assertEqual(400, response.status_code)
+
+
+class Tpfdf(TestAPI):
+    def setUp(self) -> None:
+        self.test_data: dict = self.get_sample_test_data()
+        self.df_updated: list = list()
+        self.maxDiff = None
+        self.lrec: Dict[str, Union[str, int, dict, list]] = {
+            'key': '40', 'variation': 0, 'macro_name': 'TR1GAA',
+            'field_data': {
+                'TR1G_40_OCC': b64encode(bytes([0xC1, 0xC1])).decode(),
+                'TR1G_40_ACSTIERCODE': b64encode(bytes([0xC7, 0xD3, 0xC4])).decode(),
+                'TR1G_40_TIER_EFFD': b64encode(bytes([0x47, 0xD3])).decode(),
+                'TR1G_40_TIER_DISD': b64encode(bytes([0x7F, 0xFF])).decode(),
+                'TR1G_40_PTI': b64encode(bytes([0x80])).decode(),
+            }}
+
+    def tearDown(self) -> None:
+        for df_id in self.df_updated:
+            self.delete(f"/test_data/{self.test_data['id']}/input/tpfdf/{df_id}")
+
+    def test_lrec_add_delete(self) -> None:
+        lrec = deepcopy(self.lrec)
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/tpfdf", json=lrec)
+        self.assertEqual(200, response.status_code)
+        lrec['id'] = response.json()['id']
+        lrec['field_data'] = [{'field': field, 'data': value} for field, value in lrec['field_data'].items()]
+        self.df_updated.append(lrec['id'])
+        self.assertEqual(lrec, response.json())
+        # Test duplicate add fail
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/tpfdf", json=self.lrec)
+        self.assertEqual(400, response.status_code)
+        # Retrieve the entire test data and check
+        response = self.get(f"/test_data/{self.test_data['id']}")
+        self.assertEqual(200, response.status_code)
+        expected_test_data = deepcopy(self.test_data)
+        expected_test_data['tpfdf'].append(lrec)
+        self.assertEqual(expected_test_data, response.json())
+        # Test delete with invalid test data id
+        response = self.delete(f"/test_data/invalid_id/input/tpfdf/{lrec['id']}", json=self.lrec)
+        self.assertEqual(404, response.status_code)
+        # Delete lrec
+        response = self.delete(f"/test_data/{self.test_data['id']}/input/tpfdf/{lrec['id']}")
+        self.assertEqual(200, response.status_code)
+        self.df_updated.remove(lrec['id'])
+        self.assertEqual(lrec, response.json())
+        # Check if lrec is deleted
+        response = self.get(f"/test_data/{self.test_data['id']}")
+        self.assertEqual(200, response.status_code)
+        expected_test_data = deepcopy(self.test_data)
+        self.assertEqual(expected_test_data, response.json())
+        # Test delete again (Invalid lrec_id)
+        response = self.delete(f"/test_data/{self.test_data['id']}/input/tpfdf/{lrec['id']}")
+        self.assertEqual(400, response.status_code)
+
+    def test_empty_body(self):
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/tpfdf", json={})
+        self.assertEqual(400, response.status_code)
+        self.assertDictEqual({'message': 'Error in adding Tpfdf lrec', 'error': 'Bad Request'}, response.json())
+
+    def test_invalid_test_data_id(self):
+        response = self.patch(f"/test_data/invalid_id/input/tpfdf", json=self.lrec)
+        self.assertEqual(404, response.status_code)
+
+    def test_no_variation(self):
+        del self.lrec['variation']
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/tpfdf", json=self.lrec)
+        self.assertEqual(400, response.status_code)
+
+    def test_key_not_str(self):
+        self.lrec['key'] = 0x40
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/tpfdf", json=self.lrec)
+        self.assertEqual(400, response.status_code)
+
+    def test_key_1_character(self):
+        self.lrec['key'] = '4'
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/tpfdf", json=self.lrec)
+        self.assertEqual(400, response.status_code)
+
+    def test_key_invalid_character(self):
+        self.lrec['key'] = '4*'
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/tpfdf", json=self.lrec)
+        self.assertEqual(400, response.status_code)
+
+    def test_extra_fields(self):
+        self.lrec['field_bytes'] = 'field'
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/tpfdf", json=self.lrec)
+        self.assertEqual(400, response.status_code)
+
+    def test_invalid_macro(self):
+        self.lrec['macro_name'] = 'INVALID_MACRO'
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/tpfdf", json=self.lrec)
+        self.assertEqual(400, response.status_code)
+
+    def test_field_data_list(self):
+        self.lrec['field_data'] = [{'field': field, 'data': value} for field, value in self.lrec['field_data'].items()]
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/tpfdf", json=self.lrec)
+        self.assertEqual(400, response.status_code)
+
+    def test_empty_field_data(self):
+        self.lrec['field_data'] = dict()
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/tpfdf", json=self.lrec)
+        self.assertEqual(400, response.status_code)
+
+    def test_variation_not_int(self):
+        self.lrec['variation'] = '0'
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/tpfdf", json=self.lrec)
+        self.assertEqual(400, response.status_code)
+
+    def test_field_not_in_macro(self):
+        self.lrec['field_data']['EBW000'] = b64encode(bytes([0x80])).decode()
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/tpfdf", json=self.lrec)
+        self.assertEqual(400, response.status_code)
+
+    def test_data_not_str(self):
+        self.lrec['field_data']['TR1G_40_PTI'] = 0x80
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/tpfdf", json=self.lrec)
         self.assertEqual(400, response.status_code)
