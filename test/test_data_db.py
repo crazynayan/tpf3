@@ -10,39 +10,48 @@ class Pnr(TestAPI):
         self.test_data: dict = self.get_sample_test_data()
         self.pnr_updated: list = list()
         self.maxDiff = None
+        self.default_pnr: Dict[str, Union[str, int, list]] = {
+            'key': 'name', 'locator': str(), 'variation': 0, 'data': str()}
 
     def tearDown(self) -> None:
         for pnr_id in self.pnr_updated:
             self.delete(f"/test_data/{self.test_data['id']}/input/pnr/{pnr_id}")
 
     def test_name_no_locator(self) -> None:
-        response = self.patch(f"/test_data/{self.test_data['id']}/input/pnr",
-                              json={'key': 'name', 'data': 'some data'})
+        self.default_pnr['key'] = 'name'
+        self.default_pnr['data'] = 'some data'
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/pnr", json=self.default_pnr)
         self.assertEqual(200, response.status_code)
-        self.pnr_updated.append(response.json()['id'])
-        self.assertDictEqual({'id': response.json()['id'], 'key': 'name', 'data': 'some data', 'field_data': list(),
-                              'locator': str(), 'variation': 0}, response.json())
+        self.default_pnr['id'] = response.json()['id']
+        self.default_pnr['field_data'] = list()
+        self.pnr_updated.append(self.default_pnr['id'])
+        self.assertDictEqual(self.default_pnr, response.json())
 
     def test_fqtv_no_data_no_locator(self):
-        response = self.patch(f"/test_data/{self.test_data['id']}/input/pnr", json={'key': 'fqtv'})
+        self.default_pnr['key'] = 'fqtv'
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/pnr", json=self.default_pnr)
         self.assertEqual(200, response.status_code)
-        self.pnr_updated.append(response.json()['id'])
-        self.assertDictEqual({'id': response.json()['id'], 'key': 'fqtv', 'data': str(), 'field_data': list(),
-                              'locator': str(), 'variation': 0}, response.json())
+        self.default_pnr['id'] = response.json()['id']
+        self.default_pnr['field_data'] = list()
+        self.pnr_updated.append(self.default_pnr['id'])
+        self.assertDictEqual(self.default_pnr, response.json())
 
     def test_hfax_multiple_data_locator(self):
-        response = self.patch(f"/test_data/{self.test_data['id']}/input/pnr",
-                              json={'key': 'hfax', 'data': 'data1, data2, data3, data4', 'locator': 'GIVING'})
+        self.default_pnr['key'] = 'hfax'
+        self.default_pnr['data'] = 'data1, data2, data3, data4'
+        self.default_pnr['locator'] = 'GIVING'
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/pnr", json=self.default_pnr)
         self.assertEqual(200, response.status_code)
-        self.pnr_updated.append(response.json()['id'])
-        self.assertEqual({'id': response.json()['id'], 'key': 'hfax', 'data': 'data4', 'field_data': list(),
-                          'locator': 'GIVING', 'variation': 0}, response.json())
+        self.default_pnr['id'] = response.json()['id']
+        self.pnr_updated.append(self.default_pnr['id'])
+        self.default_pnr['data'] = 'data4'
+        self.default_pnr['field_data'] = list()
+        self.assertDictEqual(self.default_pnr, response.json())
         response = self.get(f"/test_data/{self.test_data['id']}")
         expected_test_data = deepcopy(self.test_data)
         actual_test_data = response.json()
-        pnr_dict = {'key': 'hfax', 'field_data': list(), 'locator': 'GIVING', 'variation': 0}
         for index in range(1, 5):
-            pnr_dict = deepcopy(pnr_dict)
+            pnr_dict = self.default_pnr.copy()
             pnr_dict['id'] = actual_test_data['pnr'][index - 1]['id']
             pnr_dict['data'] = f"data{index}"
             expected_test_data['pnr'].append(pnr_dict)
@@ -51,27 +60,33 @@ class Pnr(TestAPI):
         self.assertDictEqual(expected_test_data, actual_test_data)
         response = self.delete(f"/test_data/{self.test_data['id']}/input/pnr/{actual_test_data['pnr'][2]['id']}")
         self.assertEqual(200, response.status_code)
-        self.assertEqual({'id': response.json()['id'], 'key': 'hfax', 'data': 'data3', 'field_data': list(),
-                          'locator': 'GIVING', 'variation': 0}, response.json())
+        self.default_pnr['data'] = 'data3'
+        self.default_pnr['id'] = response.json()['id']
+        self.assertEqual(self.default_pnr, response.json())
         response = self.get(f"/test_data/{self.test_data['id']}")
         self.assertEqual(200, response.status_code)
         actual_test_data = response.json()
         self.assertEqual(3, len(actual_test_data['pnr']))
 
     def test_itin_field_data(self):
-        response = self.patch(f"/test_data/{self.test_data['id']}/input/pnr", json={'key': 'itin', 'data': 'some data'})
+        self.default_pnr['key'] = 'itin'
+        self.default_pnr['data'] = 'some data'
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/pnr", json=self.default_pnr)
         self.assertEqual(200, response.status_code)
         pnr_id = response.json()['id']
         self.pnr_updated.append(pnr_id)
-        self.assertEqual({'id': pnr_id, 'key': 'itin', 'data': 'some data', 'field_data': list(),
-                          'locator': str(), 'variation': 0}, response.json())
+        self.default_pnr['id'] = pnr_id
+        self.default_pnr['field_data'] = list()
+        self.assertEqual(self.default_pnr, response.json())
         response = self.patch(f"/test_data/{self.test_data['id']}/input/pnr/{pnr_id}/fields",
                               json={'macro_name': 'WI0BS', 'field_data': {'WI0ARC': 'BA', 'WI0BRD': 'DFW'}})
         self.assertEqual(200, response.status_code)
         actual_pnr = response.json()
         self.assertEqual(2, len(actual_pnr['field_data']))
-        expected_pnr = {'id': actual_pnr['id'], 'data': str(), 'locator': str(), 'key': 'itin', 'variation': 0,
-                        'field_data': [{'field': 'WI0ARC', 'data': 'BA'}, {'field': 'WI0BRD', 'data': 'DFW'}]}
+        expected_pnr = self.default_pnr.copy()
+        expected_pnr['id'] = actual_pnr['id']
+        expected_pnr['data'] = str()
+        expected_pnr['field_data'] = [{'field': 'WI0ARC', 'data': 'BA'}, {'field': 'WI0BRD', 'data': 'DFW'}]
         self.assertDictEqual(expected_pnr, actual_pnr)
         response = self.patch(f"/test_data/{self.test_data['id']}/input/pnr/{pnr_id}/fields",
                               json={'macro_name': 'WI0BS', 'field_data': {'WI0ARC': 'AA'}})
@@ -82,19 +97,24 @@ class Pnr(TestAPI):
         expected_test_data['pnr'].append(expected_pnr)
         response = self.get(f"/test_data/{self.test_data['id']}")
         self.assertDictEqual(expected_test_data, response.json())
-        response = self.patch(f"/test_data/{self.test_data['id']}/input/pnr", json={'key': 'itin', 'data': 'ORD'})
+        self.default_pnr['data'] = 'ORD'
+        del self.default_pnr['id']
+        del self.default_pnr['field_data']
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/pnr", json=self.default_pnr)
         self.assertEqual(200, response.status_code)
         self.pnr_updated.append(response.json()['id'])
         self.assertNotEqual(expected_pnr['id'], response.json()['id'])
 
     def test_group_plan_field_data_update(self):
-        response = self.patch(f"/test_data/{self.test_data['id']}/input/pnr",
-                              json={'key': 'group_plan', 'locator': 'DGXEWR'})
+        self.default_pnr['key'] = 'group_plan'
+        self.default_pnr['locator'] = 'DGXEWR'
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/pnr", json=self.default_pnr)
         self.assertEqual(200, response.status_code)
         pnr_id = response.json()['id']
         self.pnr_updated.append(pnr_id)
-        self.assertEqual({'id': pnr_id, 'key': 'group_plan', 'data': str(), 'field_data': list(),
-                          'locator': 'DGXEWR', 'variation': 0}, response.json())
+        self.default_pnr['id'] = pnr_id
+        self.default_pnr['field_data'] = list()
+        self.assertEqual(self.default_pnr, response.json())
         response = self.patch(f"/test_data/{self.test_data['id']}/input/pnr/{pnr_id}/fields",
                               json={'macro_name': 'TR1GAA',
                                     'field_data': {'TR1G_40_OCC': 'AA', 'TR1G_40_PRD_TYP': 'AIR'}})
@@ -105,25 +125,24 @@ class Pnr(TestAPI):
                                                    'TR1G_40_LPRG': 'FF'}})
         self.assertEqual(200, response.status_code)
         expected_test_data = deepcopy(self.test_data)
-        pnr = {'id': pnr_id, 'data': str(), 'locator': 'DGXEWR', 'key': 'group_plan', 'variation': 0, 'field_data': [
-            {'field': 'TR1G_40_OCC', 'data': 'SU'},
-            {'field': 'TR1G_40_PRD_TYP', 'data': 'SUR'},
-            {'field': 'TR1G_40_LPRG', 'data': 'FF'}]}
+        pnr = self.default_pnr.copy()
+        pnr['field_data'] = [{'field': 'TR1G_40_OCC', 'data': 'SU'}, {'field': 'TR1G_40_PRD_TYP', 'data': 'SUR'},
+                             {'field': 'TR1G_40_LPRG', 'data': 'FF'}]
         expected_test_data['pnr'].append(pnr)
         response = self.get(f"/test_data/{self.test_data['id']}")
         self.assertDictEqual(expected_test_data, response.json())
 
     def test_subs_card_seg_error_field_data(self):
-        response = self.patch(f"/test_data/{self.test_data['id']}/input/pnr",
-                              json={'key': 'subs_card_seg', 'data': 'data1', 'locator': str()})
+        self.default_pnr['key'] = 'subs_card_seg'
+        self.default_pnr['data'] = 'data1'
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/pnr", json=self.default_pnr)
         self.assertEqual(200, response.status_code)
         pnr_id = response.json()['id']
         self.pnr_updated.append(pnr_id)
         # Check duplicate data
-        response = self.patch(f"/test_data/{self.test_data['id']}/input/pnr",
-                              json={'key': 'subs_card_seg', 'data': 'data1'})
-        self.assertEqual(400, response.status_code)
-        self.assertDictEqual({'message': 'Error in adding PNR element', 'error': 'Bad Request'}, response.json())
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/pnr", json=self.default_pnr)
+        self.assertEqual(200, response.status_code)
+        self.pnr_updated.append(response.json()['id'])
         # Check invalid pnr_id
         response = self.patch(f"/test_data/{self.test_data['id']}/input/pnr/invalid_id/fields",
                               json={'macro_name': 'WA0AA', 'field_data': {'WA0BBR': '01'}})
@@ -165,28 +184,31 @@ class Pnr(TestAPI):
         self.assertEqual(200, response.status_code)
 
     def test_invalid_test_data_id(self):
-        response = self.patch(f"/test_data/invalid_id/input/pnr", json={'key': 'name'})
+        response = self.patch(f"/test_data/invalid_id/input/pnr", json=self.default_pnr)
         self.assertEqual(404, response.status_code)
 
     def test_invalid_pnr_id(self):
-        response = self.delete(f"/test_data/{self.test_data['id']}/input/pnr/invalid_id", json={'key': 'name'})
+        response = self.delete(f"/test_data/{self.test_data['id']}/input/pnr/invalid_id", json=self.default_pnr)
         self.assertEqual(400, response.status_code)
 
     def test_no_key(self):
-        response = self.patch(f"/test_data/{self.test_data['id']}/input/pnr", json={'locator': 'GIVING', 'data': 'd'})
+        del self.default_pnr['key']
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/pnr", json=self.default_pnr)
         self.assertEqual(400, response.status_code)
 
     def test_invalid_key(self):
-        response = self.patch(f"/test_data/{self.test_data['id']}/input/pnr", json={'key': 'invalid'})
+        self.default_pnr['key'] = 'invalid'
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/pnr", json=self.default_pnr)
         self.assertEqual(400, response.status_code)
 
     def test_locator_5_chars(self):
-        response = self.patch(f"/test_data/{self.test_data['id']}/input/pnr", json={'key': 'name', 'locator': 'ABCDE'})
+        self.default_pnr['locator'] = 'ABCDE'
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/pnr", json=self.default_pnr)
         self.assertEqual(400, response.status_code)
 
     def test_locator_7_chars(self):
-        response = self.patch(f"/test_data/{self.test_data['id']}/input/pnr",
-                              json={'key': 'name', 'locator': 'ABCDEFG'})
+        self.default_pnr['locator'] = 'ABCDEFG'
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/pnr", json=self.default_pnr)
         self.assertEqual(400, response.status_code)
 
     def test_field_data_in_body(self):
