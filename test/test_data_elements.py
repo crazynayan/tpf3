@@ -73,11 +73,8 @@ class OutputFields(TestAPI):
 
     def _check_field_byte(self, macro_name: str, field_name: str, length: int, input_len: int = None,
                           input_base_reg: str = None) -> dict:
-        body: dict = {'field': f"{field_name}"}
-        if input_len is not None:
-            body['length'] = length
-        if input_base_reg is not None:
-            body['base_reg'] = input_base_reg
+        body: dict = {'field': f"{field_name}", 'length': input_len if input_len is not None else 0,
+                      'base_reg': input_base_reg if input_base_reg is not None else str()}
         response = self.patch(f"/test_data/{self.test_data['id']}/output/cores/{macro_name}/fields", json=body)
         self.assertEqual(200, response.status_code)
         self.macro_fields.append((macro_name, field_name))
@@ -100,7 +97,7 @@ class OutputFields(TestAPI):
 
     def test_default_field_no_length(self) -> None:
         field_byte1 = self._check_field_byte('WA0AA', 'WA0BBR', 2)
-        field_byte2 = self._check_field_byte('WA0AA', '#WA0TTY', 2, input_len=0, input_base_reg='R0')
+        field_byte2 = self._check_field_byte('WA0AA', '#WA0TTY', 1, input_len=0, input_base_reg='R0')
         self._check_core('WA0AA', [field_byte1, field_byte2])
 
     def test_default_field_with_length_change_it(self) -> None:
@@ -215,12 +212,11 @@ class InputFields(TestAPI):
             self.delete(f"/test_data/{self.test_data['id']}/input/cores/{macro_name}/fields/{quote(field_name)}")
 
     def _check_field_byte(self, macro_name: str, field_name: str, data: str) -> dict:
-        body: dict = {'field': f"{field_name}", 'data': data}
+        body: dict = {'field': f"{field_name}", 'data': data, 'variation': 0}
         response = self.patch(f"/test_data/{self.test_data['id']}/input/cores/{macro_name}/fields", json=body)
         self.assertEqual(200, response.status_code)
         self.macro_fields.append((macro_name, field_name))
-        # body['id'] = response.json()['id']
-        # body['length'] = 0
+        del body['variation']
         self.assertDictEqual(body, response.json())
         return body
 
