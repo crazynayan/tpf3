@@ -6,8 +6,11 @@ from test import TestAPI
 class RunTestData(TestAPI):
 
     def setUp(self) -> None:
-        self.test_data = self.get_sample_test_data()
+        self.test_data = self.get_test_data('run')
         self.default_pnr = {'key': 'name', 'locator': str(), 'variation': 0, 'data': str()}
+
+    def tearDown(self) -> None:
+        self.delete(f"/test_data/{self.test_data['id']}")
 
     def test_name_variation(self):
         self.default_pnr['data'] = "2ZAVERI, 6SHAH"
