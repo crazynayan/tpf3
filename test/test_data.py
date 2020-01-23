@@ -72,7 +72,7 @@ class GetAllTestData(TestAPI):
         self.assertIn(self.test_data_header, response.json())
 
     def test_get_by_name(self):
-        response = self.get(f"/test_data", params={'name': 'ETA5 Testing 123'})
+        response = self.get(f"/test_data", params={'name': 'NZ99 - ETA5 - Testing 123'})
         self.assertEqual(200, response.status_code)
         self.assertIn(self.test_data_header, response.json())
         self.assertEqual(1, len(response.json()))

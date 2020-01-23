@@ -22,7 +22,7 @@ def authenticated_request(func):
 
 
 class TestAPI(TestCase):
-    NAME = 'ETA5 Testing 123'
+    NAME = 'NZ99 - ETA5 - Testing 123'
     SEG_NAME = 'ETA5'
 
     def get_sample_test_data(self) -> dict:
