@@ -16,7 +16,7 @@ class CreateTestData(TestAPI):
                               'error': 'Bad Request'}, response.json())
 
     def test_duplicate_name(self) -> None:
-        response = self.post(f"/test_data", json={'name': 'ETA5 Testing 123', 'seg_name': 'ETA5'})
+        response = self.post(f"/test_data", json={'name': self.NAME, 'seg_name': self.SEG_NAME})
         self.assertEqual(400, response.status_code)
 
     def test_3_items_in_body(self) -> None:
@@ -32,7 +32,7 @@ class CreateTestData(TestAPI):
         self.assertEqual(400, response.status_code)
 
     def test_with_no_name(self) -> None:
-        response = self.post(f"/test_data", json={'name': '', 'seg_name': 'ETA5'})
+        response = self.post(f"/test_data", json={'name': '', 'seg_name': self.SEG_NAME})
         self.assertEqual(400, response.status_code)
 
     def test_with_no_seg_name(self) -> None:

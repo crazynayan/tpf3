@@ -41,8 +41,10 @@ class TestAPI(TestCase):
         config.TEST_DATA = response.json()
         return config.TEST_DATA
 
-    def get_test_data(self, reason: str) -> dict:
-        response = self.post(f"/test_data", json={'name': f"{self.NAME}{reason}", 'seg_name': self.SEG_NAME})
+    def get_test_data(self, reason: str, seg_name: str = None) -> dict:
+        if not seg_name:
+            seg_name = self.SEG_NAME
+        response = self.post(f"/test_data", json={'name': f"{self.NAME}{reason}", 'seg_name': seg_name})
         if response.status_code != 200:
             raise TypeError
         return response.json()
