@@ -26,7 +26,7 @@ class FileTestData(TestAPI):
         self.delete(f"/test_data/{self.test_data['id']}")
 
     def test_file(self):
-        response = self.patch(f"/test_data/{self.test_data['id']}/input/fixed_file", json=self.fixed_file)
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/fixed_files", json=self.fixed_file)
         self.assertEqual(200, response.status_code)
         response = self.get(f"/test_data/{self.test_data['id']}")
         self.assertEqual(200, response.status_code)
@@ -35,13 +35,20 @@ class FileTestData(TestAPI):
         self.pool_file['id'] = actual_test_data['fixed_files'][0]['pool_files'][0]['id']
         self.file_item['id'] = actual_test_data['fixed_files'][0]['pool_files'][0]['file_items'][0]['id']
         self.assertEqual(self.test_data, actual_test_data)
+        # Test delete
+        response = self.delete(f"/test_data/{self.test_data['id']}/input/fixed_files/{self.fixed_file['id']}")
+        self.assertEqual(200, response.status_code)
+        response = self.get(f"/test_data/{self.test_data['id']}")
+        self.assertEqual(200, response.status_code)
+        self.test_data['fixed_files'] = list()
+        self.assertEqual(self.test_data, response.json())
 
     def test_run(self):
-        response = self.patch(f"/test_data/{self.test_data['id']}/input/fixed_file", json=self.fixed_file)
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/fixed_files", json=self.fixed_file)
         self.assertEqual(200, response.status_code)
         self.fixed_file['variation'] = 1
         self.field_data[1]['data'] = b64encode(bytes([0x10])).decode()
-        response = self.patch(f"/test_data/{self.test_data['id']}/input/fixed_file", json=self.fixed_file)
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/fixed_files", json=self.fixed_file)
         self.assertEqual(200, response.status_code)
         response = self.patch(f"/test_data/{self.test_data['id']}/input/pnr",
                               json={'variation': 0, 'key': 'group_plan', 'locator': str(),
@@ -66,10 +73,10 @@ class FileTestData(TestAPI):
 
     def test_rec_id_not_int(self):
         self.fixed_file['rec_id'] = 'TJ'
-        response = self.patch(f"/test_data/{self.test_data['id']}/input/fixed_file", json=self.fixed_file)
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/fixed_files", json=self.fixed_file)
         self.assertEqual(400, response.status_code)
 
     def test_variation_too_high(self):
         self.fixed_file['variation'] = 2
-        response = self.patch(f"/test_data/{self.test_data['id']}/input/fixed_file", json=self.fixed_file)
+        response = self.patch(f"/test_data/{self.test_data['id']}/input/fixed_files", json=self.fixed_file)
         self.assertEqual(400, response.status_code)
