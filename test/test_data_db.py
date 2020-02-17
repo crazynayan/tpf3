@@ -173,7 +173,7 @@ class Pnr(TestAPI):
         self.assertEqual(400, response.status_code)
         # Check field name not in macro
         response = self.patch(f"/test_data/{self.test_data['id']}/input/pnr/{pnr_id}/fields",
-                              json={'macro_name': 'WA0AA', 'field_data': {'WA0BBR': '01', 'EBW001': '02'}})
+                              json={'macro_name': 'WA0AA', 'field_data': {'WA0BBR': '01', 'WI0BRD': '02'}})
         self.assertEqual(400, response.status_code)
         # Check field value not str
         response = self.patch(f"/test_data/{self.test_data['id']}/input/pnr/{pnr_id}/fields",
@@ -325,7 +325,7 @@ class Tpfdf(TestAPI):
         self.assertEqual(400, response.status_code)
 
     def test_field_not_in_macro(self):
-        self.lrec['field_data']['EBW000'] = b64encode(bytes([0x80])).decode()
+        self.lrec['field_data']['WI0BRD'] = b64encode(bytes([0x80])).decode()
         response = self.patch(f"/test_data/{self.test_data['id']}/input/tpfdf", json=self.lrec)
         self.assertEqual(400, response.status_code)
 
