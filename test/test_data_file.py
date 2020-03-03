@@ -9,7 +9,7 @@ class FileTestData(TestAPI):
         self.test_data = self.get_test_data(' File', 'TS21')
         self.fixed_file = {'variation': 0, 'rec_id': 58321, 'macro_name': 'TJ0TJ', 'fixed_type': 94,
                            'fixed_ordinal': 383, 'forward_chain_count': 0, 'forward_chain_label': str(),
-                           'field_data': list(), 'file_items': list()}
+                           'field_data': list(), 'file_items': list(), 'variation_name': str()}
         self.pool_file = {'rec_id': 51688, 'macro_name': 'IY1IY', 'index_field': 'TJ0ATH',
                           'index_macro_name': 'TJ0TJ', 'forward_chain_count': 0, 'forward_chain_label': str(),
                           'field_data': list(), 'pool_files': list()}

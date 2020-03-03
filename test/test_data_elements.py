@@ -90,7 +90,8 @@ class OutputFields(TestAPI):
         expected_test_data = deepcopy(self.test_data)
         core_id = actual_test_data['outputs'][0]['cores'][0]['id']
         base_reg = base_reg if base_reg else str()
-        core = {'id': core_id, 'base_reg': base_reg, 'field_data': list(), 'macro_name': macro_name, 'variation': 0}
+        core = {'id': core_id, 'base_reg': base_reg, 'field_data': list(), 'macro_name': macro_name, 'variation': 0,
+                'variation_name': str()}
         expected_test_data['outputs'][0]['cores'].append(core)
         expected_test_data['outputs'][0]['cores'][0]['field_data'].extend(field_bytes)
         self.assertDictEqual(expected_test_data, actual_test_data)
@@ -226,7 +227,8 @@ class InputFields(TestAPI):
         actual_test_data = response.json()
         expected_test_data = deepcopy(self.test_data)
         core_id = actual_test_data['cores'][0]['id']
-        core = {'id': core_id, 'base_reg': str(), 'field_data': list(), 'macro_name': macro_name, 'variation': 0}
+        core = {'id': core_id, 'base_reg': str(), 'field_data': list(), 'macro_name': macro_name, 'variation': 0,
+                'variation_name': str()}
         expected_test_data['cores'].append(core)
         expected_test_data['cores'][0]['field_data'].extend(field_bytes)
         self.assertDictEqual(expected_test_data, actual_test_data)
@@ -328,6 +330,7 @@ class InputRegisters(TestAPI):
     def setUp(self) -> None:
         self.test_data: dict = self.get_sample_test_data()
         self.reg_list: list = list()
+        self.maxDiff = None
 
     def tearDown(self) -> None:
         for reg in self.reg_list:

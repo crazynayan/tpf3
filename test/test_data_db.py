@@ -11,7 +11,7 @@ class Pnr(TestAPI):
         self.pnr_updated: list = list()
         self.maxDiff = None
         self.default_pnr: Dict[str, Union[str, int, list]] = {
-            'key': 'name', 'locator': str(), 'variation': 0, 'data': str()}
+            'key': 'name', 'locator': str(), 'variation': 0, 'variation_name': str(), 'data': str()}
 
     def tearDown(self) -> None:
         for pnr_id in self.pnr_updated:
@@ -223,7 +223,7 @@ class Tpfdf(TestAPI):
         self.df_updated: list = list()
         self.maxDiff = None
         self.lrec: Dict[str, Union[str, int, dict, list]] = {
-            'key': '40', 'variation': 0, 'macro_name': 'TR1GAA',
+            'key': '40', 'variation': 0, 'macro_name': 'TR1GAA', 'variation_name': str(),
             'field_data': {
                 'TR1G_40_OCC': b64encode(bytes([0xC1, 0xC1])).decode(),
                 'TR1G_40_ACSTIERCODE': b64encode(bytes([0xC7, 0xD3, 0xC4])).decode(),
