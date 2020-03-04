@@ -51,15 +51,16 @@ class FileTestData(TestAPI):
         response = self.patch(f"/test_data/{self.test_data['id']}/input/fixed_files", json=self.fixed_file)
         self.assertEqual(200, response.status_code)
         response = self.patch(f"/test_data/{self.test_data['id']}/input/pnr",
-                              json={'variation': 0, 'key': 'group_plan', 'locator': str(),
+                              json={'variation': 0, 'key': 'group_plan', 'locator': str(), 'variation_name': str(),
                                     'data': 'BTS-B4T0/108/11-FINANCIAL SERVICES'})
         self.assertEqual(200, response.status_code)
         response = self.patch(f"/test_data/{self.test_data['id']}/input/cores/WA0AA/fields",
-                              json={'variation': 0, 'field': 'WA0POR',
+                              json={'variation': 0, 'field': 'WA0POR', 'variation_name': str(),
                                     'data': b64encode(bytes([0x00, 0x6F, 0x2F])).decode()})
         self.assertEqual(200, response.status_code)
         response = self.patch(f"/test_data/{self.test_data['id']}/input/cores/WA0AA/fields",
-                              json={'variation': 0, 'field': 'WA0FNS', 'data': b64encode(bytes([0x10])).decode()})
+                              json={'variation': 0, 'field': 'WA0FNS', 'data': b64encode(bytes([0x10])).decode(),
+                                    'variation_name': str()})
         self.assertEqual(200, response.status_code)
         response = self.patch(f"/test_data/{self.test_data['id']}/output/regs", json={'regs': ['R6']})
         self.assertEqual(200, response.status_code)

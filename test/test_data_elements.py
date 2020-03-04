@@ -213,11 +213,12 @@ class InputFields(TestAPI):
             self.delete(f"/test_data/{self.test_data['id']}/input/cores/{macro_name}/fields/{quote(field_name)}")
 
     def _check_field_byte(self, macro_name: str, field_name: str, data: str) -> dict:
-        body: dict = {'field': f"{field_name}", 'data': data, 'variation': 0}
+        body: dict = {'field': f"{field_name}", 'data': data, 'variation': 0, 'variation_name': str()}
         response = self.patch(f"/test_data/{self.test_data['id']}/input/cores/{macro_name}/fields", json=body)
         self.assertEqual(200, response.status_code)
         self.macro_fields.append((macro_name, field_name))
         del body['variation']
+        del body['variation_name']
         self.assertDictEqual(body, response.json())
         return body
 
