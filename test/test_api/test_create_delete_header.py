@@ -10,7 +10,7 @@ class CreateDeleteHeader(TestAPI):
 
     def tearDown(self):
         if self.cleanup:
-            self.delete(f"/api/test_data/{TestAPI.NAME}")
+            self.delete(f"/api/test_data", params={NAME: TestAPI.NAME})
 
     def test_create(self):
         response = self.post("/api/test_data", json={NAME: TestAPI.NAME, SEG_NAME: TestAPI.SEG_NAME})
@@ -84,18 +84,25 @@ class CreateDeleteHeader(TestAPI):
         self.assertEqual(Types.INPUT_HEADER, response_body[TYPE])
         self.assertIn("id", response_body)
         self.assertEqual(4, len(response_body))
-        self.delete(f"/api/test_data/{long_name}")
+        self.delete(f"/api/test_data", params={NAME: long_name})
 
     def test_delete_success(self):
         self.post("/api/test_data", json={NAME: TestAPI.NAME, SEG_NAME: TestAPI.SEG_NAME})
-        response = self.delete(f"/api/test_data/{TestAPI.NAME}")
+        response = self.delete(f"/api/test_data", params={NAME: TestAPI.NAME})
         self.assertEqual(200, response.status_code)
         response_body = response.json()
         self.assertEqual(SuccessMsg.DELETE, response_body[TEST_DATA])
         self.assertEqual(1, len(response_body))
 
     def test_delete_fail(self):
-        response = self.delete(f"/api/test_data/{TestAPI.NAME}")
+        response = self.delete(f"/api/test_data", params={NAME: TestAPI.NAME})
+        self.assertEqual(404, response.status_code)
+        response_body = response.json()
+        self.assertEqual(ErrorMsg.NOT_FOUND, response_body[TEST_DATA])
+        self.assertEqual(1, len(response_body))
+
+    def test_delete_fail_with_no_params(self):
+        response = self.delete(f"/api/test_data")
         self.assertEqual(404, response.status_code)
         response_body = response.json()
         self.assertEqual(ErrorMsg.NOT_FOUND, response_body[TEST_DATA])
