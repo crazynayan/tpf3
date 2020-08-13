@@ -1,5 +1,5 @@
 from test import TestAPI
-from test.test_api.constants import ErrorMsg, Types, NAME, SEG_NAME, TYPE, SuccessMsg, TEST_DATA
+from test.test_api.constants import ErrorMsg, Types, NAME, SEG_NAME, TYPE, SuccessMsg, TEST_DATA, ACTION, Action
 
 
 # noinspection DuplicatedCode
@@ -7,6 +7,11 @@ class CreateDeleteHeader(TestAPI):
 
     def setUp(self):
         self.cleanup: bool = False
+        self.create_body: dict = {
+            NAME: TestAPI.NAME,
+            SEG_NAME: TestAPI.SEG_NAME,
+            ACTION: Action.CREATE
+        }
 
     def tearDown(self):
         if self.cleanup:
@@ -14,7 +19,7 @@ class CreateDeleteHeader(TestAPI):
 
     def test_create(self):
         self.cleanup = True
-        response = self.post("/api/test_data", json={NAME: TestAPI.NAME, SEG_NAME: TestAPI.SEG_NAME})
+        response = self.post("/api/test_data", json=self.create_body)
         self.assertEqual(200, response.status_code)
         response_body = response.json()
         self.assertEqual(TestAPI.NAME, response_body[NAME])
@@ -25,8 +30,8 @@ class CreateDeleteHeader(TestAPI):
 
     def test_duplicate(self):
         self.cleanup = True
-        self.post("/api/test_data", json={NAME: TestAPI.NAME, SEG_NAME: TestAPI.SEG_NAME})
-        response = self.post("/api/test_data", json={NAME: TestAPI.NAME, SEG_NAME: TestAPI.SEG_NAME})
+        self.post("/api/test_data", json=self.create_body)
+        response = self.post("/api/test_data", json=self.create_body)
         self.assertEqual(400, response.status_code)
         response_body = response.json()
         self.assertEqual(ErrorMsg.UNIQUE, response_body[NAME])
@@ -36,7 +41,8 @@ class CreateDeleteHeader(TestAPI):
         body = {
             SEG_NAME: "some invalid segment",
             NAME: "an invalid name with 101 characters "
-                  "01234012345678901234567890123456789012345678901234567890123456789"
+                  "01234012345678901234567890123456789012345678901234567890123456789",
+            ACTION: Action.CREATE
         }
         response = self.post("/api/test_data", json=body)
         self.assertEqual(400, response.status_code)
@@ -47,7 +53,7 @@ class CreateDeleteHeader(TestAPI):
 
     def test_invalid_type_and_lower_case_seg_name_and_space_padding_in_name(self):
         self.cleanup = True
-        body = {NAME: f"  {TestAPI.NAME}  ", SEG_NAME: TestAPI.SEG_NAME.lower(), TYPE: Types.PNR}
+        body = {NAME: f"  {TestAPI.NAME}  ", SEG_NAME: TestAPI.SEG_NAME.lower(), TYPE: Types.PNR, ACTION: Action.CREATE}
         response = self.post("/api/test_data", json=body)
         self.assertEqual(200, response.status_code)
         response_body = response.json()
@@ -58,7 +64,12 @@ class CreateDeleteHeader(TestAPI):
         self.assertEqual(4, len(response_body))
 
     def test_empty_body(self):
+        # Complete empty body will give action not empty
         response = self.post("/api/test_data", json=dict())
+        self.assertEqual(400, response.status_code)
+        self.assertEqual({ACTION: ErrorMsg.NOT_EMPTY}, response.json())
+        # Create action will say name and seg_name must not be empty
+        response = self.post("/api/test_data", json={ACTION: Action.CREATE})
         self.assertEqual(400, response.status_code)
         response_body = response.json()
         self.assertEqual(ErrorMsg.NOT_EMPTY, response_body[NAME])
@@ -66,7 +77,7 @@ class CreateDeleteHeader(TestAPI):
         self.assertEqual(2, len(response_body))
 
     def test_with_space_padding(self):
-        response = self.post("/api/test_data", json={NAME: "    ", SEG_NAME: "   "})
+        response = self.post("/api/test_data", json={NAME: "    ", SEG_NAME: "   ", ACTION: Action.CREATE})
         self.assertEqual(400, response.status_code)
         response_body = response.json()
         self.assertEqual(ErrorMsg.NOT_EMPTY, response_body[NAME])
@@ -76,7 +87,9 @@ class CreateDeleteHeader(TestAPI):
     def test_longest_name_and_invalid_extra_fields(self):
         long_name = "a valid name with 100 characters " \
                     "0123456012345678901234567890123456789012345678901234567890123456789"
-        response = self.post("/api/test_data", json={NAME: long_name, SEG_NAME: TestAPI.SEG_NAME, "error": "invalid"})
+        self.create_body[NAME] = long_name
+        self.create_body["error"] = "invalid"
+        response = self.post("/api/test_data", json=self.create_body)
         self.assertEqual(200, response.status_code)
         response_body = response.json()
         self.assertEqual(long_name, response_body[NAME])
@@ -87,7 +100,7 @@ class CreateDeleteHeader(TestAPI):
         self.delete(f"/api/test_data", params={NAME: long_name})
 
     def test_delete_success(self):
-        self.post("/api/test_data", json={NAME: TestAPI.NAME, SEG_NAME: TestAPI.SEG_NAME})
+        self.post("/api/test_data", json=self.create_body)
         response = self.delete(f"/api/test_data", params={NAME: TestAPI.NAME})
         self.assertEqual(200, response.status_code)
         response_body = response.json()
@@ -111,8 +124,8 @@ class CreateDeleteHeader(TestAPI):
     def test_get_all(self):
         self.cleanup = True
         second_name = f"{TestAPI.NAME} 2"
-        self.post("/api/test_data", json={NAME: TestAPI.NAME, SEG_NAME: TestAPI.SEG_NAME})
-        self.post("/api/test_data", json={NAME: second_name, SEG_NAME: TestAPI.SEG_NAME})
+        self.post("/api/test_data", json=self.create_body)
+        self.post("/api/test_data", json={NAME: second_name, SEG_NAME: TestAPI.SEG_NAME, ACTION: Action.CREATE})
         response = self.get(f"/api/test_data")
         self.assertEqual(200, response.status_code)
         response_body = response.json()
@@ -125,7 +138,7 @@ class CreateDeleteHeader(TestAPI):
 
     def test_get_by_name(self):
         self.cleanup = True
-        self.post("/api/test_data", json={NAME: TestAPI.NAME, SEG_NAME: TestAPI.SEG_NAME})
+        self.post("/api/test_data", json=self.create_body)
         response = self.get(f"/api/test_data", params={NAME: TestAPI.NAME})
         self.assertEqual(200, response.status_code)
         response_body = response.json()
@@ -148,3 +161,18 @@ class CreateDeleteHeader(TestAPI):
         self.assertEqual(200, response.status_code)
         response_body = response.json()
         self.assertEqual(1, len(response_body))
+
+    def test_invalid_action(self):
+        # No action
+        response = self.post(f"/api/test_data")
+        self.assertEqual(400, response.status_code)
+        self.assertEqual({ACTION: ErrorMsg.NOT_EMPTY}, response.json())
+        # Action with just spaces
+        self.create_body[ACTION] = " "
+        response = self.post(f"/api/test_data", json=self.create_body)
+        self.assertEqual(400, response.status_code)
+        self.assertEqual({ACTION: ErrorMsg.NOT_EMPTY}, response.json())
+        self.create_body[ACTION] = " invalid "
+        response = self.post(f"/api/test_data", json=self.create_body)
+        self.assertEqual(400, response.status_code)
+        self.assertEqual({ACTION: ErrorMsg.INVALID_ACTION}, response.json())
