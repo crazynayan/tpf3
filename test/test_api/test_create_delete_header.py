@@ -1,3 +1,5 @@
+from random import choice
+
 from test import TestAPI
 from test.test_api.constants import ErrorMsg, Types, NAME, SEG_NAME, TYPE, SuccessMsg, TEST_DATA, ACTION, Action
 
@@ -12,10 +14,21 @@ class CreateDeleteHeader(TestAPI):
             SEG_NAME: TestAPI.SEG_NAME,
             ACTION: Action.CREATE
         }
+        self.long_101 = "NZ99 - an invalid name with 101 characters - "
+        self.long_101 = f"{self.long_101}{''.join([str(choice(range(10))) for _ in range(101 - len(self.long_101))])}"
+        self.long_100 = "NZ99 - a valid name with 100 characters"
+        self.long_100 = f"{self.long_100}{''.join([str(choice(range(10))) for _ in range(100 - len(self.long_100))])}"
+        self.cleanup_100 = False
+        self.second_name = f"{TestAPI.NAME} 2"
+        self.cleanup_second = False
 
     def tearDown(self):
         if self.cleanup:
             self.delete(f"/api/test_data", params={NAME: TestAPI.NAME})
+        if self.cleanup_100:
+            self.delete(f"/api/test_data", params={NAME: self.long_100})
+        if self.cleanup_second:
+            self.delete(f"/api/test_data", params={NAME: self.second_name})
 
     def test_create(self):
         self.cleanup = True
@@ -38,13 +51,10 @@ class CreateDeleteHeader(TestAPI):
         self.assertEqual(1, len(response_body))
 
     def test_long_name_and_seg_not_in_library(self):
-        body = {
-            SEG_NAME: "some invalid segment",
-            NAME: "an invalid name with 101 characters "
-                  "01234012345678901234567890123456789012345678901234567890123456789",
-            ACTION: Action.CREATE
-        }
-        response = self.post("/api/test_data", json=body)
+        self.assertEqual(101, len(self.long_101))
+        self.create_body[NAME] = self.long_101
+        self.create_body[SEG_NAME] = "some invalid segment"
+        response = self.post("/api/test_data", json=self.create_body)
         self.assertEqual(400, response.status_code)
         response_body = response.json()
         self.assertEqual(ErrorMsg.LESS_100, response_body[NAME])
@@ -85,19 +95,17 @@ class CreateDeleteHeader(TestAPI):
         self.assertEqual(2, len(response_body))
 
     def test_longest_name_and_invalid_extra_fields(self):
-        long_name = "a valid name with 100 characters " \
-                    "0123456012345678901234567890123456789012345678901234567890123456789"
-        self.create_body[NAME] = long_name
+        self.create_body[NAME] = self.long_100
         self.create_body["error"] = "invalid"
+        self.cleanup_100 = True
         response = self.post("/api/test_data", json=self.create_body)
         self.assertEqual(200, response.status_code)
         response_body = response.json()
-        self.assertEqual(long_name, response_body[NAME])
+        self.assertEqual(self.long_100, response_body[NAME])
         self.assertEqual(TestAPI.SEG_NAME, response_body[SEG_NAME])
         self.assertEqual(Types.INPUT_HEADER, response_body[TYPE])
         self.assertIn("id", response_body)
         self.assertEqual(4, len(response_body))
-        self.delete(f"/api/test_data", params={NAME: long_name})
 
     def test_delete_success(self):
         self.post("/api/test_data", json=self.create_body)
@@ -123,18 +131,18 @@ class CreateDeleteHeader(TestAPI):
 
     def test_get_all(self):
         self.cleanup = True
-        second_name = f"{TestAPI.NAME} 2"
         self.post("/api/test_data", json=self.create_body)
-        self.post("/api/test_data", json={NAME: second_name, SEG_NAME: TestAPI.SEG_NAME, ACTION: Action.CREATE})
+        self.cleanup_second = True
+        self.create_body[NAME] = self.second_name
+        self.post("/api/test_data", json=self.create_body)
         response = self.get(f"/api/test_data")
         self.assertEqual(200, response.status_code)
         response_body = response.json()
         self.assertEqual(2, len(response_body))
         self.assertEqual(4, len(response_body[0]))
         self.assertIn("id", response_body[1])
-        self.assertEqual(second_name, next(test_data[NAME] for test_data in response_body
-                                           if test_data[NAME] == second_name))
-        self.delete("/api/test_data", params={NAME: second_name})
+        self.assertEqual(self.second_name, next(test_data[NAME] for test_data in response_body
+                                                if test_data[NAME] == self.second_name))
 
     def test_get_by_name(self):
         self.cleanup = True
