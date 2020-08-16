@@ -1,4 +1,5 @@
 from functools import wraps
+from random import choice
 from unittest import TestCase
 
 from requests import Response, post, get, delete, patch
@@ -22,8 +23,12 @@ def authenticated_request(func):
 
 
 class TestAPI(TestCase):
-    NAME = 'NZ99 - ETA5 - Testing 123'
-    SEG_NAME = 'ETA5'
+    NAME = "NZ99 - ETA5 - Testing 123"
+    SEG_NAME = "ETA5"
+    NAME_100 = "NZ99 - a valid name with 100 characters - "
+    NAME_100 = f"{NAME_100}{''.join([str(choice(range(10))) for _ in range(100 - len(NAME_100))])}"
+    NAME_101 = "NZ99 - an invalid name with 101 characters - "
+    NAME_101 = f"{NAME_101}{''.join([str(choice(range(10))) for _ in range(101 - len(NAME_101))])}"
 
     def get_sample_test_data(self) -> dict:
         if config.TEST_DATA:
