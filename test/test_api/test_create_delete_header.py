@@ -4,7 +4,6 @@ from test import TestAPI
 from test.test_api.constants import ErrorMsg, Types, NAME, SEG_NAME, TYPE, SuccessMsg, TEST_DATA, ACTION, Action
 
 
-# noinspection DuplicatedCode
 class CreateDeleteHeader(TestAPI):
 
     def setUp(self):
