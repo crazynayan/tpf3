@@ -1,14 +1,14 @@
 from requests import Response
 
 from test import TestAPI
-from test.test_api.constants import ACTION, Action, NAME, NEW_NAME, SEG_NAME, Types, TYPE, ErrorMsg
+from test.test_api.constants import ACTION, Actions, NAME, NEW_NAME, SEG_NAME, Types, TYPE, ErrorMsg
 
 
 class Rename(TestAPI):
 
     def setUp(self):
         self.rename_body = {
-            ACTION: Action.RENAME,
+            ACTION: Actions.RENAME,
             NAME: TestAPI.NAME,
             NEW_NAME: str()
         }
@@ -18,7 +18,7 @@ class Rename(TestAPI):
             SEG_NAME: TestAPI.SEG_NAME,
             TYPE: Types.INPUT_HEADER
         }
-        response = self.post(f"/api/test_data", json={ACTION: Action.CREATE, NAME: TestAPI.NAME,
+        response = self.post(f"/api/test_data", json={ACTION: Actions.CREATE, NAME: TestAPI.NAME,
                                                       SEG_NAME: TestAPI.SEG_NAME})
         self.rename_response["id"] = response.json()["id"]
         self.cleanup = [TestAPI.NAME]
@@ -45,7 +45,7 @@ class Rename(TestAPI):
             NAME: ErrorMsg.NOT_EMPTY,
             NEW_NAME: ErrorMsg.NOT_EMPTY
         }
-        response = self.post("/api/test_data", json={ACTION: Action.RENAME})
+        response = self.post("/api/test_data", json={ACTION: Actions.RENAME})
         self.assertEqual(400, response.status_code)
         self.assertDictEqual(error_response, response.json())
         # Test empty name and new_name
@@ -88,7 +88,7 @@ class Copy(TestAPI):
 
     def setUp(self):
         self.copy_body = {
-            ACTION: Action.COPY,
+            ACTION: Actions.COPY,
             NAME: TestAPI.NAME,
             NEW_NAME: str()
         }
@@ -99,7 +99,7 @@ class Copy(TestAPI):
             TYPE: Types.INPUT_HEADER
         }]
         self.cleanup = [TestAPI.NAME]
-        self.post(f"/api/test_data", json={ACTION: Action.CREATE, NAME: TestAPI.NAME, SEG_NAME: TestAPI.SEG_NAME})
+        self.post(f"/api/test_data", json={ACTION: Actions.CREATE, NAME: TestAPI.NAME, SEG_NAME: TestAPI.SEG_NAME})
 
     def _copy_test_data(self, new_name: str) -> Response:
         self.cleanup.append(new_name)
@@ -124,7 +124,7 @@ class Copy(TestAPI):
             NAME: ErrorMsg.NOT_EMPTY,
             NEW_NAME: ErrorMsg.NOT_EMPTY
         }
-        response = self.post("/api/test_data", json={ACTION: Action.COPY})
+        response = self.post("/api/test_data", json={ACTION: Actions.COPY})
         self.assertEqual(400, response.status_code)
         self.assertDictEqual(error_response, response.json())
         # Test empty name and new_name

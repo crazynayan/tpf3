@@ -1,7 +1,7 @@
 from requests import Response
 
 from test import TestAPI
-from test.test_api.constants import ErrorMsg, Types, NAME, SEG_NAME, TYPE, SuccessMsg, TEST_DATA, ACTION, Action
+from test.test_api.constants import ErrorMsg, Types, NAME, SEG_NAME, TYPE, SuccessMsg, TEST_DATA, ACTION, Actions
 
 
 class CreateDeleteHeader(TestAPI):
@@ -10,7 +10,7 @@ class CreateDeleteHeader(TestAPI):
         self.create_body: dict = {
             NAME: TestAPI.NAME,
             SEG_NAME: TestAPI.SEG_NAME,
-            ACTION: Action.CREATE
+            ACTION: Actions.CREATE
         }
         self.create_response: dict = {
             "id": str(),
@@ -61,8 +61,8 @@ class CreateDeleteHeader(TestAPI):
         create_body = {
             NAME: f"  {TestAPI.NAME}  ",
             SEG_NAME: TestAPI.SEG_NAME.lower(),
-            TYPE: Types.PNR,
-            ACTION: Action.CREATE
+            TYPE: Types.INPUT_CORE_BLOCK,
+            ACTION: Actions.CREATE
         }
         response = self.post("/api/test_data", json=create_body)
         self.cleanup.append(TestAPI.NAME)
@@ -84,7 +84,7 @@ class CreateDeleteHeader(TestAPI):
             NAME: ErrorMsg.NOT_EMPTY,
             SEG_NAME: ErrorMsg.NOT_EMPTY
         }
-        response = self.post("/api/test_data", json={ACTION: Action.CREATE})
+        response = self.post("/api/test_data", json={ACTION: Actions.CREATE})
         self.assertEqual(400, response.status_code)
         self.assertDictEqual(error_response, response.json())
         # Space padding
